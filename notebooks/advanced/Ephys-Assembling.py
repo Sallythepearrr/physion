@@ -20,7 +20,7 @@
 #       N.B. you can use the code below to guide filling the recordings info
 
 # %%
-import sys, time
+import sys, time, os
 sys.path += [os.path.expanduser('~/physion/src'), '../../src']
 import json
 import numpy as np
@@ -292,19 +292,32 @@ for key in ['Npx-Rec', 'nStart', 'nStop']:
 
 
 # %%
-datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/Sally/Npx_WT_prelim_2026/2026_02_13').replace('/', os.path.sep)
 
 datatable
 
 class Data:
+    """Convenience container for one protocol/row in DataTable0.xlsx.
 
+    Loads:
+      - NIdaq digital line for visual stimulation
+      - OpenEphys continuous data (named 'LFP' here; stream depends on your OpenEphys config)
+      - Optional curated AP spikes from Kilosort/Phy (keeps units labeled 'good' in cluster_group.tsv)
+
+    Notes on timebases:
+      - NIdaq timebase is in seconds (t_nidaq)
+      - Probe samples are indexed in Neuropixels sample numbers
+      - nStart/nStop map the protocol time window onto probe sample indices.
+        Spikes are aligned to protocol time by (sample - nStart) / fs_probe.
+    """
     def __init__(self, datafolder, iRec):
 
         datatable, _, _ = read_spreadsheet(\
                                 os.path.join(datafolder, 'DataTable0.xlsx'),
                                         get_metadata_from='files')
 
-        nidaq = np.load(os.path.join(datafolder, datatable['time'][iRec], 'Nidaq.npy'),
+        
+        nidaq = np.load(os.path.join(datafolder, datatable['time'][iRec], 'NIdaq.npy'),
                         allow_pickle=True).item()
         self.t_nidaq = np.arange(0, len(nidaq['digital'][0]))*nidaq['dt']
         self.visStim = nidaq['digital'][3]
